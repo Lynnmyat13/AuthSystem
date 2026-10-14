@@ -1,37 +1,50 @@
-const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#039;",
-}[character] as string));
+import nodemailer from "nodemailer";
+
+interface SmtpError {
+  code?: string;
+  command?: string;
+  responseCode?: number;
+}
 
 const sendEmail = async (to: string, subject: string, text: string): Promise<void> => {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+  const port = Number(process.env.SMTP_PORT || 587);
 
-  if (!apiKey || !from) {
+  if (!user || !pass) {
     throw new Error("Email delivery is not configured");
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      subject,
-      text,
-      html: `<h2>Authentication System</h2><p>${escapeHtml(text)}</p>`,
-    }),
-    signal: AbortSignal.timeout(10_000),
+  if (port !== 465 && port !== 587) {
+    throw new Error("SMTP_PORT must be 465 or 587");
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port,
+    secure: port === 465,
+    requireTLS: port === 587,
+    auth: { user, pass },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   });
 
-  if (!response.ok) {
-    throw new Error(`Email provider rejected the request (${response.status})`);
+  try {
+    await transporter.sendMail({
+      from: `"Authentication System" <${user}>`,
+      to,
+      subject,
+      text,
+    });
+  } catch (error) {
+    const smtpError = error as SmtpError;
+    console.error("SMTP email delivery failed", {
+      code: smtpError.code,
+      command: smtpError.command,
+      responseCode: smtpError.responseCode,
+    });
+    throw new Error("Failed to send email");
   }
 };
 

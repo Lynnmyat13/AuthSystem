@@ -1,35 +1,45 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const escapeHtml = (value) => value.replace(/[&<>"']/g, character => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-}[character]));
+const nodemailer_1 = __importDefault(require("nodemailer"));
 const sendEmail = async (to, subject, text) => {
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.RESEND_FROM_EMAIL;
-    if (!apiKey || !from) {
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASS;
+    const port = Number(process.env.SMTP_PORT || 587);
+    if (!user || !pass) {
         throw new Error("Email delivery is not configured");
     }
-    const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            from,
-            to: [to],
+    if (port !== 465 && port !== 587) {
+        throw new Error("SMTP_PORT must be 465 or 587");
+    }
+    const transporter = nodemailer_1.default.createTransport({
+        host: "smtp.gmail.com",
+        port,
+        secure: port === 465,
+        requireTLS: port === 587,
+        auth: { user, pass },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
+    });
+    try {
+        await transporter.sendMail({
+            from: `"Authentication System" <${user}>`,
+            to,
             subject,
             text,
-            html: `<h2>Authentication System</h2><p>${escapeHtml(text)}</p>`,
-        }),
-        signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) {
-        throw new Error(`Email provider rejected the request (${response.status})`);
+        });
+    }
+    catch (error) {
+        const smtpError = error;
+        console.error("SMTP email delivery failed", {
+            code: smtpError.code,
+            command: smtpError.command,
+            responseCode: smtpError.responseCode,
+        });
+        throw new Error("Failed to send email");
     }
 };
 exports.default = sendEmail;

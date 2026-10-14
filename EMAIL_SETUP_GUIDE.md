@@ -1,18 +1,19 @@
-# Resend email setup
+# Gmail SMTP email setup
 
-The backend sends OTP messages through Resend's HTTPS API. SMTP credentials and Nodemailer are not used.
+The backend sends OTP messages through Gmail SMTP with Nodemailer.
 
-1. Add and verify a sending domain in Resend.
-2. Create a restricted Resend API key.
-3. Set these variables in the Render service:
+Add these variables to `backend/.env` locally and to the backend hosting environment in production:
 
 ```env
-RESEND_API_KEY=<secret API key>
-RESEND_FROM_EMAIL=Authentication System <auth@your-verified-domain.example>
+EMAIL_USER=your-gmail-address@gmail.com
+EMAIL_PASS=your-google-app-password
+SMTP_PORT=587
 ```
 
-For local development, put the same names in `backend/.env`. Never use a production key in the frontend or prefix it with `VITE_`.
+`SMTP_PORT=587` uses STARTTLS and is the default. Use `SMTP_PORT=465` for implicit SSL/TLS. Other ports are rejected.
 
-If Resend is unconfigured, times out, or rejects a request, the login endpoint returns an error, clears the newly generated OTP, and does not expose the OTP or provider response in logs.
+`EMAIL_PASS` must be a Google App Password, not the account's normal password. Enable two-step verification for the Google account, create an App Password, and never expose it to the frontend or commit it to Git.
 
-For initial Resend sandbox testing, send only to an address permitted by the Resend account. Use a verified custom domain before production testing with arbitrary recipients.
+When delivery fails, the backend logs only safe SMTP diagnostics (`code`, `command`, and numeric response code), clears the newly generated login OTP, and returns an error. It never logs the OTP, email password, or SMTP response text.
+
+Some hosting networks block outbound SMTP. If a deployed service times out while local delivery succeeds, verify that the hosting plan permits outbound connections to the selected SMTP port.
