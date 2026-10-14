@@ -5,6 +5,7 @@ import passport from "passport";
 import User from "../models/User";
 import sendEmail from "../utils/sentEmail";
 import axios from "axios";
+import crypto from "crypto";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -110,8 +111,12 @@ export const login = async (req: Request, res: Response) => {
     // ✅ Verify reCAPTCHA (POST form-encoded for reliability)
     try {
       const secret = process.env.RECAPTCHA_SECRET_KEY;
+      if (!secret) {
+        return res.status(503).json({ message: "reCAPTCHA is not configured" });
+      }
+
       const params = new URLSearchParams();
-      params.append("secret", secret || "");
+      params.append("secret", secret);
       params.append("response", token);
 
       const response = await axios.post(
@@ -120,21 +125,18 @@ export const login = async (req: Request, res: Response) => {
       );
       const captchaData: any = response.data;
 
-      console.debug("reCAPTCHA verification result:", captchaData);
-
       if (!captchaData.success) {
         return res
           .status(400)
           .json({ message: "reCAPTCHA verification failed" });
       }
-    } catch (captchaErr) {
-      console.error("reCAPTCHA verification error:", captchaErr);
+    } catch {
+      console.error("reCAPTCHA verification request failed");
       return res.status(500).json({ message: "Error verifying reCAPTCHA" });
     }
 
     // Continue your login logic
     const user = await User.findOne({ email });
-    console.debug("Login attempt for:", email, "userFound:", !!user);
     if (!user) return res.status(400).json({ message: "User not found" });
 
     if (!password || typeof password !== "string") {
@@ -146,18 +148,24 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    console.debug("Password match result for", email, ":", isMatch);
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    const otp = Math.floor(100000 + Math.random() * 900000);
+    const otp = crypto.randomInt(100000, 1000000);
     user.otp = otp;
     await user.save();
 
-    await sendEmail(email, "Login OTP Code", `Your login OTP code is ${otp}`);
+    try {
+      await sendEmail(email, "Login OTP Code", `Your login OTP code is ${otp}`);
+    } catch {
+      await User.updateOne({ _id: user._id, otp }, { $unset: { otp: 1 } });
+      console.error("OTP email delivery failed");
+      return res.status(502).json({ message: "Unable to deliver OTP. Please try again." });
+    }
+
     res.status(200).json({ message: "OTP sent to email for login" });
   } catch (error) {
-    console.error(error);
+    console.error("Login request failed");
     res.status(500).json({ message: "Error during login" });
   }
 };

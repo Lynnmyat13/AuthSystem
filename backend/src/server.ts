@@ -1,5 +1,5 @@
 import express from "express";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import dotenv from "dotenv";
 import session from "express-session";
 import passport from "passport";
@@ -11,7 +11,29 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors({ origin: ["http://localhost:5173", "http://127.0.0.1:5173"] }));
+
+if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+}
+
+const allowedOrigins = new Set([
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    process.env.FRONTEND_URL,
+    ...(process.env.ALLOWED_ORIGINS || "").split(","),
+].filter((origin): origin is string => Boolean(origin?.trim())).map(origin => origin.trim().replace(/\/$/, "")));
+
+const corsOptions: CorsOptions = {
+    origin: (origin, callback) => {
+        // Requests without an Origin header are not browser cross-origin requests.
+        callback(null, !origin || allowedOrigins.has(origin.replace(/\/$/, "")));
+    },
+    credentials: true,
+    optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 // Session configuration for OAuth
@@ -19,7 +41,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Set to true in production with HTTPS
+    cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+    }
 }));
 
 // Initialize Passport

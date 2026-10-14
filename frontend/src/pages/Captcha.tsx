@@ -45,18 +45,13 @@ export default function CaptchaPage() {
 
         setIsLoading(true);
         try {
-            // Log token for debugging (remove in production)
-            console.debug("reCAPTCHA token:", token);
-
             const res = await authAPI.login(email, password, token);
             toast(res.data.message || "OTP has been sent to your email.");
             localStorage.setItem("verifiedEmail", email);
             navigate("/verify-otp");
         } catch (err: any) {
             // If verification failed on the server, reset the widget so user can try again
-            try {
-                recaptchaRef.current?.reset();
-            } catch { }
+            recaptchaRef.current?.reset();
             setCaptchaToken(null);
             toast(err.response?.data?.message || "Login failed");
         } finally {

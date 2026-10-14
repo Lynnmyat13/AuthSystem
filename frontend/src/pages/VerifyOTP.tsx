@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { authAPI, setTokens, startTokenRefresh } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import axios from "axios";
 
 export default function VerifyOTP() {
     const [otp, setOtp] = useState("");
@@ -36,8 +37,11 @@ export default function VerifyOTP() {
 
             toast.success("Login successful! Welcome back!");
             navigate("/dashboard");
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || "Verification failed");
+        } catch (err: unknown) {
+            const message = axios.isAxiosError<{ message?: string }>(err)
+                ? err.response?.data?.message
+                : undefined;
+            toast.error(message || "Verification failed");
         } finally {
             setIsLoading(false);
         }

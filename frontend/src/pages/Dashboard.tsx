@@ -4,10 +4,15 @@ import { Link } from "react-router-dom";
 import { authAPI, stopTokenRefresh, setTokens, startTokenRefresh } from "../utils/api";
 import { toast } from "sonner";
 
+interface UserDetails {
+    name?: string;
+    email?: string;
+}
+
 const Dashboard = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<UserDetails | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {

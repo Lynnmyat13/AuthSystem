@@ -2,7 +2,8 @@
 import axios, { type AxiosResponse, AxiosError } from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:4000/api/auth",
+  baseURL: (import.meta.env.VITE_API_URL || "http://localhost:4000/api/auth").replace(/\/$/, ""),
+  withCredentials: true,
 });
 
 // Token management (access token only)

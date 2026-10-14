@@ -36,9 +36,7 @@ https://www.mongodb.com/try/download/compass
 
 2. Click connect and enter connection string.
 
-```bash
-MONBODBURL='mongodb+srv://lynnmyat:Lynn1382003@authentication-system.lnqt3vc.mongodb.net/'
-```
+Set `MONGODB_URL` in `backend/.env`; see `backend/.env.example` for the required format. Never commit database credentials.
 
 3. Check the test folder to see database.
 
@@ -83,9 +81,7 @@ http://localhost:5173
 
 ## Environment Variables
 
-Environment variables are already set up and not included here.
-
-Note: It is already existed in the zip file.
+Copy `backend/.env.example` and `frontend/.env.example` to local `.env` files, then replace every placeholder. Production values belong in the Render and Vercel environment settings, not in Git.
 
 ## Authentication & Security
 

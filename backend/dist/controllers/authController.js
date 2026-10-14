@@ -9,6 +9,7 @@ const passport_1 = __importDefault(require("passport"));
 const User_1 = __importDefault(require("../models/User"));
 const sentEmail_1 = __importDefault(require("../utils/sentEmail"));
 const axios_1 = __importDefault(require("axios"));
+const crypto_1 = __importDefault(require("crypto"));
 const tokenManager_1 = require("../utils/tokenManager");
 // Function to generate numeric OTP
 const generateNumericOTP = (length = 6) => {
@@ -93,25 +94,26 @@ const login = async (req, res) => {
         // ✅ Verify reCAPTCHA (POST form-encoded for reliability)
         try {
             const secret = process.env.RECAPTCHA_SECRET_KEY;
+            if (!secret) {
+                return res.status(503).json({ message: "reCAPTCHA is not configured" });
+            }
             const params = new URLSearchParams();
-            params.append("secret", secret || "");
+            params.append("secret", secret);
             params.append("response", token);
             const response = await axios_1.default.post("https://www.google.com/recaptcha/api/siteverify", params);
             const captchaData = response.data;
-            console.debug("reCAPTCHA verification result:", captchaData);
             if (!captchaData.success) {
                 return res
                     .status(400)
                     .json({ message: "reCAPTCHA verification failed" });
             }
         }
-        catch (captchaErr) {
-            console.error("reCAPTCHA verification error:", captchaErr);
+        catch {
+            console.error("reCAPTCHA verification request failed");
             return res.status(500).json({ message: "Error verifying reCAPTCHA" });
         }
         // Continue your login logic
         const user = await User_1.default.findOne({ email });
-        console.debug("Login attempt for:", email, "userFound:", !!user);
         if (!user)
             return res.status(400).json({ message: "User not found" });
         if (!password || typeof password !== "string") {
@@ -121,17 +123,23 @@ const login = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
         const isMatch = await bcryptjs_1.default.compare(password, user.password);
-        console.debug("Password match result for", email, ":", isMatch);
         if (!isMatch)
             return res.status(400).json({ message: "Invalid credentials" });
-        const otp = Math.floor(100000 + Math.random() * 900000);
+        const otp = crypto_1.default.randomInt(100000, 1000000);
         user.otp = otp;
         await user.save();
-        await (0, sentEmail_1.default)(email, "Login OTP Code", `Your login OTP code is ${otp}`);
+        try {
+            await (0, sentEmail_1.default)(email, "Login OTP Code", `Your login OTP code is ${otp}`);
+        }
+        catch {
+            await User_1.default.updateOne({ _id: user._id, otp }, { $unset: { otp: 1 } });
+            console.error("OTP email delivery failed");
+            return res.status(502).json({ message: "Unable to deliver OTP. Please try again." });
+        }
         res.status(200).json({ message: "OTP sent to email for login" });
     }
     catch (error) {
-        console.error(error);
+        console.error("Login request failed");
         res.status(500).json({ message: "Error during login" });
     }
 };
