@@ -1,8 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { type AxiosResponse, AxiosError } from "axios";
 
+const configuredApiUrl = (import.meta.env.VITE_API_URL || "http://localhost:4000").replace(/\/$/, "");
+
 const API = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || "http://localhost:4000/api/auth").replace(/\/$/, ""),
+  baseURL: configuredApiUrl.endsWith("/api/auth")
+    ? configuredApiUrl
+    : `${configuredApiUrl}/api/auth`,
   withCredentials: true,
 });
 

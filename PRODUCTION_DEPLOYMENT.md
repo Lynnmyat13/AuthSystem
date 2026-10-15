@@ -7,7 +7,7 @@ Replace the example hostnames below with the stable production domains shown in 
 Set these for the Production environment, then redeploy:
 
 ```env
-VITE_API_URL=https://your-render-service.onrender.com/api/auth
+VITE_API_URL=https://authsystem-xlwv.onrender.com/api/auth
 VITE_RECAPTCHA_SITE_KEY=<public site key>
 ```
 
@@ -18,14 +18,14 @@ NODE_ENV=production
 MONGODB_URL=<MongoDB Atlas connection string>
 JWT_SECRET=<long random secret>
 SESSION_SECRET=<different long random secret>
-FRONTEND_URL=https://your-project.vercel.app
-ALLOWED_ORIGINS=https://your-project.vercel.app
+FRONTEND_URL=https://auth-system-eta-gilt.vercel.app
+ALLOWED_ORIGINS=https://auth-system-eta-gilt.vercel.app
 EMAIL_USER=<Gmail address>
 EMAIL_PASS=<Google App Password>
 SMTP_PORT=587
 GOOGLE_CLIENT_ID=<Google OAuth client ID>
 GOOGLE_CLIENT_SECRET=<Google OAuth client secret>
-GOOGLE_CALLBACK_URL=https://your-render-service.onrender.com/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://authsystem-xlwv.onrender.com/api/auth/google/callback
 RECAPTCHA_SECRET_KEY=<secret reCAPTCHA key>
 ```
 
@@ -35,9 +35,9 @@ Remove the obsolete backend `VITE_RECAPTCHA_SITE_KEY` variable from Render. SMTP
 
 ## Provider configuration
 
-- Google OAuth authorized JavaScript origin: `https://your-project.vercel.app`
-- Google OAuth authorized redirect URI: `https://your-render-service.onrender.com/api/auth/google/callback`
-- reCAPTCHA allowed domains: `your-project.vercel.app` and `localhost` (hostnames only; no scheme or path)
+- Google OAuth authorized JavaScript origin: `https://auth-system-eta-gilt.vercel.app`
+- Google OAuth authorized redirect URI: `https://authsystem-xlwv.onrender.com/api/auth/google/callback`
+- reCAPTCHA allowed domains: `auth-system-eta-gilt.vercel.app` and `localhost` (hostnames only; no scheme or path)
 - MongoDB Atlas: allow Render network access and use a database user with only the permissions this application needs.
 - Gmail: enable two-step verification and use a Google App Password in `EMAIL_PASS`; never use the account's normal password.
 

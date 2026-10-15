@@ -22,9 +22,12 @@ const allowedOrigins = new Set([
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    "https://auth-system-eta-gilt.vercel.app",
     process.env.FRONTEND_URL,
     ...(process.env.ALLOWED_ORIGINS || "").split(","),
-].filter((origin) => Boolean(origin?.trim())).map(origin => origin.trim().replace(/\/$/, "")));
+]
+    .filter((origin) => Boolean(origin?.trim()))
+    .map((origin) => origin.trim().replace(/\/$/, "")));
 const corsOptions = {
     origin: (origin, callback) => {
         // Requests without an Origin header are not browser cross-origin requests.
@@ -45,7 +48,7 @@ app.use((0, express_session_1.default)({
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-    }
+    },
 }));
 // Initialize Passport
 app.use(passport_1.default.initialize());
