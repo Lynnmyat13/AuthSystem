@@ -11,7 +11,9 @@ const passport_1 = __importDefault(require("passport"));
 const db_1 = __importDefault(require("./config/db"));
 require("./config/googleOAuth");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
+const sentEmail_1 = require("./utils/sentEmail");
 dotenv_1.default.config();
+(0, sentEmail_1.validateEmailConfig)();
 (0, db_1.default)();
 const app = (0, express_1.default)();
 if (process.env.NODE_ENV === "production") {

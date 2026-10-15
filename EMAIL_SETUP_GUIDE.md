@@ -1,19 +1,27 @@
-# Gmail SMTP email setup
+# Resend email setup
 
-The backend sends OTP messages through Gmail SMTP with Nodemailer.
+The backend sends OTP messages through the official Resend SDK over HTTPS.
 
-Add these variables to `backend/.env` locally and to the backend hosting environment in production:
+## Local development
+
+Add these variables to `backend/.env`:
 
 ```env
-EMAIL_USER=your-gmail-address@gmail.com
-EMAIL_PASS=your-google-app-password
-SMTP_PORT=587
+RESEND_API_KEY=<secret Resend API key>
+RESEND_FROM_EMAIL=Authentication System <onboarding@resend.dev>
 ```
 
-`SMTP_PORT=587` uses STARTTLS and is the default. Use `SMTP_PORT=465` for implicit SSL/TLS. Other ports are rejected.
+The Resend testing sender is suitable only for development and is restricted to recipients permitted by the Resend account.
 
-`EMAIL_PASS` must be a Google App Password, not the account's normal password. Enable two-step verification for the Google account, create an App Password, and never expose it to the frontend or commit it to Git.
+## Production
 
-When delivery fails, the backend logs only safe SMTP diagnostics (`code`, `command`, and numeric response code), clears the newly generated login OTP, and returns an error. It never logs the OTP, email password, or SMTP response text.
+Verify a domain in Resend, then configure the Render service with:
 
-Some hosting networks block outbound SMTP. If a deployed service times out while local delivery succeeds, verify that the hosting plan permits outbound connections to the selected SMTP port.
+```env
+RESEND_API_KEY=<secret production Resend API key>
+RESEND_FROM_EMAIL=Authentication System <auth@your-verified-domain.example>
+```
+
+The backend validates both variables at startup. Delivery failures log only the provider error type and numeric status. API keys, recipients, OTP values, and provider response messages are never logged.
+
+If delivery fails during login, the generated OTP is removed and the endpoint returns `502`; authentication cannot continue with that OTP.

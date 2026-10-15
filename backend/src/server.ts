@@ -6,8 +6,10 @@ import passport from "passport";
 import connectDB from "./config/db";
 import "./config/googleOAuth";
 import authRoutes from "./routes/authRoutes";
+import { validateEmailConfig } from "./utils/sentEmail";
 
 dotenv.config();
+validateEmailConfig();
 connectDB();
 
 const app = express();
