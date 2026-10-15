@@ -6,17 +6,11 @@ import passport from "passport";
 import connectDB from "./config/db";
 import "./config/googleOAuth";
 import authRoutes from "./routes/authRoutes";
-import { validateEmailConfig } from "./utils/sentEmail";
 
 dotenv.config();
-validateEmailConfig();
 connectDB();
 
 const app = express();
-
-if (process.env.NODE_ENV === "production") {
-  app.set("trust proxy", 1);
-}
 
 const allowedOrigins = new Set(
   [
@@ -24,12 +18,7 @@ const allowedOrigins = new Set(
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
-    "https://auth-system-eta-gilt.vercel.app",
-    process.env.FRONTEND_URL,
-    ...(process.env.ALLOWED_ORIGINS || "").split(","),
-  ]
-    .filter((origin): origin is string => Boolean(origin?.trim()))
-    .map((origin) => origin.trim().replace(/\/$/, "")),
+  ],
 );
 
 const corsOptions: CorsOptions = {
@@ -48,12 +37,12 @@ app.use(express.json());
 // Session configuration for OAuth
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "your-secret-key",
+    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
     },
   }),

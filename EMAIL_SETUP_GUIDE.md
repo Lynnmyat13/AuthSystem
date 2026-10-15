@@ -1,27 +1,17 @@
-# Resend email setup
+# Gmail SMTP email setup
 
-The backend sends OTP messages through the official Resend SDK over HTTPS.
-
-## Local development
+The local backend sends OTP messages through Gmail SMTP with Nodemailer.
 
 Add these variables to `backend/.env`:
 
 ```env
-RESEND_API_KEY=<secret Resend API key>
-RESEND_FROM_EMAIL=Authentication System <onboarding@resend.dev>
+EMAIL_USER=your-gmail-address@gmail.com
+EMAIL_PASS=your-google-app-password
+SMTP_PORT=587
 ```
 
-The Resend testing sender is suitable only for development and is restricted to recipients permitted by the Resend account.
+`SMTP_PORT=587` uses STARTTLS and is the default. Port `465` uses implicit SSL/TLS. Other ports are rejected.
 
-## Production
+`EMAIL_PASS` must be a Google App Password, not the account's normal password. Enable two-step verification for the Gmail account, create an App Password, and never expose it to the frontend or commit it to Git.
 
-Verify a domain in Resend, then configure the Render service with:
-
-```env
-RESEND_API_KEY=<secret production Resend API key>
-RESEND_FROM_EMAIL=Authentication System <auth@your-verified-domain.example>
-```
-
-The backend validates both variables at startup. Delivery failures log only the provider error type and numeric status. API keys, recipients, OTP values, and provider response messages are never logged.
-
-If delivery fails during login, the generated OTP is removed and the endpoint returns `502`; authentication cannot continue with that OTP.
+When delivery fails, the backend logs only safe SMTP diagnostics (`code`, `command`, and numeric response code), removes the newly generated login OTP, and returns `502`. It never logs the OTP, email password, recipient, or SMTP response text.

@@ -1,38 +1,43 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateEmailConfig = void 0;
-const resend_1 = require("resend");
-const validateEmailConfig = () => {
-    const missing = ["RESEND_API_KEY", "RESEND_FROM_EMAIL"].filter((name) => !process.env[name]);
-    if (missing.length) {
-        throw new Error(`Missing required email environment variables: ${missing.join(", ")}`);
-    }
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-exports.validateEmailConfig = validateEmailConfig;
+Object.defineProperty(exports, "__esModule", { value: true });
+const nodemailer_1 = __importDefault(require("nodemailer"));
 const sendEmail = async (to, subject, text) => {
-    (0, exports.validateEmailConfig)();
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASS;
+    const port = Number(process.env.SMTP_PORT || 587);
+    if (!user || !pass) {
+        throw new Error("Email delivery is not configured");
+    }
+    if (port !== 465 && port !== 587) {
+        throw new Error("SMTP_PORT must be 465 or 587");
+    }
+    const transporter = nodemailer_1.default.createTransport({
+        host: "smtp.gmail.com",
+        port,
+        secure: port === 465,
+        requireTLS: port === 587,
+        auth: { user, pass },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
+    });
     try {
-        const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
-        const { error } = await resend.emails.send({
-            from: process.env.RESEND_FROM_EMAIL,
+        await transporter.sendMail({
+            from: `"Authentication System" <${user}>`,
             to,
             subject,
             text,
-        }, { signal: AbortSignal.timeout(10000) });
-        if (error) {
-            console.error("Resend email delivery failed", {
-                name: error.name,
-                statusCode: error.statusCode,
-            });
-            throw new Error("Email provider rejected the request");
-        }
+        });
     }
     catch (error) {
-        if (error instanceof Error && error.message === "Email provider rejected the request") {
-            throw error;
-        }
-        console.error("Resend email request failed", {
-            name: error instanceof Error ? error.name : "UnknownError",
+        const smtpError = error;
+        console.error("SMTP email delivery failed", {
+            code: smtpError.code,
+            command: smtpError.command,
+            responseCode: smtpError.responseCode,
         });
         throw new Error("Failed to send email");
     }

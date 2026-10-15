@@ -81,7 +81,7 @@ http://localhost:5173
 
 ## Environment Variables
 
-Copy `backend/.env.example` and `frontend/.env.example` to local `.env` files, then replace every placeholder. Production values belong in the Render and Vercel environment settings, not in Git.
+Copy `backend/.env.example` and `frontend/.env.example` to local `.env` files, then replace every placeholder. Keep local credentials out of Git.
 
 ## Authentication & Security
 

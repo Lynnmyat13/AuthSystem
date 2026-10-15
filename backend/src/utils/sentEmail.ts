@@ -1,44 +1,48 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-export const validateEmailConfig = (): void => {
-  const missing = ["RESEND_API_KEY", "RESEND_FROM_EMAIL"].filter(
-    (name) => !process.env[name],
-  );
-
-  if (missing.length) {
-    throw new Error(`Missing required email environment variables: ${missing.join(", ")}`);
-  }
-};
+interface SmtpError {
+  code?: string;
+  command?: string;
+  responseCode?: number;
+}
 
 const sendEmail = async (to: string, subject: string, text: string): Promise<void> => {
-  validateEmailConfig();
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+  const port = Number(process.env.SMTP_PORT || 587);
+
+  if (!user || !pass) {
+    throw new Error("Email delivery is not configured");
+  }
+
+  if (port !== 465 && port !== 587) {
+    throw new Error("SMTP_PORT must be 465 or 587");
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port,
+    secure: port === 465,
+    requireTLS: port === 587,
+    auth: { user, pass },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
+  });
 
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY!);
-    const { error } = await resend.emails.send(
-      {
-        from: process.env.RESEND_FROM_EMAIL!,
-        to,
-        subject,
-        text,
-      },
-      { signal: AbortSignal.timeout(10_000) },
-    );
-
-    if (error) {
-      console.error("Resend email delivery failed", {
-        name: error.name,
-        statusCode: error.statusCode,
-      });
-      throw new Error("Email provider rejected the request");
-    }
+    await transporter.sendMail({
+      from: `"Authentication System" <${user}>`,
+      to,
+      subject,
+      text,
+    });
   } catch (error) {
-    if (error instanceof Error && error.message === "Email provider rejected the request") {
-      throw error;
-    }
-
-    console.error("Resend email request failed", {
-      name: error instanceof Error ? error.name : "UnknownError",
+    const smtpError = error as SmtpError;
+    console.error("SMTP email delivery failed", {
+      code: smtpError.code,
+      command: smtpError.command,
+      responseCode: smtpError.responseCode,
     });
     throw new Error("Failed to send email");
   }

@@ -11,25 +11,15 @@ const passport_1 = __importDefault(require("passport"));
 const db_1 = __importDefault(require("./config/db"));
 require("./config/googleOAuth");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
-const sentEmail_1 = require("./utils/sentEmail");
 dotenv_1.default.config();
-(0, sentEmail_1.validateEmailConfig)();
 (0, db_1.default)();
 const app = (0, express_1.default)();
-if (process.env.NODE_ENV === "production") {
-    app.set("trust proxy", 1);
-}
 const allowedOrigins = new Set([
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
-    "https://auth-system-eta-gilt.vercel.app",
-    process.env.FRONTEND_URL,
-    ...(process.env.ALLOWED_ORIGINS || "").split(","),
-]
-    .filter((origin) => Boolean(origin?.trim()))
-    .map((origin) => origin.trim().replace(/\/$/, "")));
+]);
 const corsOptions = {
     origin: (origin, callback) => {
         // Requests without an Origin header are not browser cross-origin requests.
@@ -43,12 +33,12 @@ app.options("*", (0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
 // Session configuration for OAuth
 app.use((0, express_session_1.default)({
-    secret: process.env.SESSION_SECRET || "your-secret-key",
+    secret: process.env.SESSION_SECRET || process.env.JWT_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "lax",
     },
 }));
