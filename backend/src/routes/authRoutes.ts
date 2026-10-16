@@ -3,7 +3,6 @@ import passport from "passport";
 import {
   register,
   login,
-  verifyOTP,
   verifyOTPAndLogin,
   refreshToken,
   logout,
@@ -19,7 +18,6 @@ const router = express.Router();
 
 // Public routes
 router.post("/register", register);
-// router.post("/verify-otp", verifyOTP);
 router.post("/login", login);
 router.post("/verify-otp-login", verifyOTPAndLogin);
 router.post("/refresh-token", refreshToken);

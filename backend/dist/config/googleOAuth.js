@@ -8,6 +8,7 @@ const passport_google_oauth20_1 = require("passport-google-oauth20");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const User_1 = __importDefault(require("../models/User"));
+const emailValidation_1 = require("../utils/emailValidation");
 // Configure Google OAuth Strategy
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -22,7 +23,11 @@ else {
         callbackURL: googleCallbackUrl,
     }, async (accessToken, refreshToken, profile, done) => {
         try {
-            let user = await User_1.default.findOne({ email: profile.emails?.[0]?.value });
+            const email = (0, emailValidation_1.normalizeValidEmail)(profile.emails?.[0]?.value);
+            if (!email) {
+                return done(new Error("Google account did not provide a valid email address"));
+            }
+            let user = await User_1.default.findOne({ email: (0, emailValidation_1.exactEmailPattern)(email) });
             if (user) {
                 user.lastLogin = new Date();
                 await user.save();
@@ -31,7 +36,7 @@ else {
             else {
                 user = new User_1.default({
                     name: profile.displayName,
-                    email: profile.emails?.[0]?.value,
+                    email,
                     password: null, // No password for OAuth users
                     role: "User",
                     isVerified: true,

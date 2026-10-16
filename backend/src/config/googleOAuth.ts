@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import User from "../models/User";
 import { generateAccessToken, generateRefreshToken, storeTokens } from "../utils/tokenManager";
+import { exactEmailPattern, normalizeValidEmail } from "../utils/emailValidation";
 
 // Configure Google OAuth Strategy
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -23,7 +24,12 @@ if (!googleClientId || !googleClientSecret) {
 
             async (accessToken, refreshToken, profile, done) => {
                 try {
-                    let user = await User.findOne({ email: profile.emails?.[0]?.value });
+                    const email = normalizeValidEmail(profile.emails?.[0]?.value);
+                    if (!email) {
+                        return done(new Error("Google account did not provide a valid email address"));
+                    }
+
+                    let user = await User.findOne({ email: exactEmailPattern(email) });
 
                     if (user) {
                         user.lastLogin = new Date();
@@ -32,7 +38,7 @@ if (!googleClientId || !googleClientSecret) {
                     } else {
                         user = new User({
                             name: profile.displayName,
-                            email: profile.emails?.[0]?.value,
+                            email,
                             password: null, // No password for OAuth users
                             role: "User",
                             isVerified: true,

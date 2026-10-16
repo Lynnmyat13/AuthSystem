@@ -10,7 +10,6 @@ const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
 // Public routes
 router.post("/register", authController_1.register);
-// router.post("/verify-otp", verifyOTP);
 router.post("/login", authController_1.login);
 router.post("/verify-otp-login", authController_1.verifyOTPAndLogin);
 router.post("/refresh-token", authController_1.refreshToken);

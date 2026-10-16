@@ -134,10 +134,6 @@ export const authAPI = {
   register: (name: string, email: string, password: string) =>
     API.post("/register", { name, email, password }),
 
-  // Verify OTP (for registration)
-  // verifyOTP: (email: string, otp: string) =>
-  //     API.post("/verify-otp", { email, otp }),
-
   // Google OAuth
   googleAuth: () => {
     window.location.href = `${API.defaults.baseURL}/google`;

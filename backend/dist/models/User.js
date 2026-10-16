@@ -6,9 +6,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
 const userSchema = new mongoose_1.default.Schema({
     name: { type: String },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, trim: true, lowercase: true },
     password: { type: String }, // Made optional for OAuth users
-    otp: { type: Number },
+    otp: { type: Number, select: false },
+    otpExpiresAt: { type: Date, select: false },
+    otpAttempts: { type: Number, default: 0, select: false },
+    otpLastSentAt: { type: Date, select: false },
+    otpPurpose: {
+        type: String,
+        enum: ["login"],
+        select: false,
+    },
     isVerified: { type: Boolean, default: false },
     lastLogin: { type: Date },
     isActive: { type: Boolean, default: true },

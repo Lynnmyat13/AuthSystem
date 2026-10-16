@@ -76,9 +76,11 @@ export default function VerifyOTP() {
                                 id="otp"
                                 name="otp"
                                 type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]{6}"
                                 required
                                 value={otp}
-                                onChange={(e) => setOtp(e.target.value)}
+                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400 text-center text-lg tracking-widest"
                                 placeholder="Enter 6-digit code"
                                 maxLength={6}

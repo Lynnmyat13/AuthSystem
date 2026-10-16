@@ -4,15 +4,34 @@ import { Link } from "react-router-dom";
 import { authAPI } from "../utils/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import isEmail from "validator/lib/isEmail";
+
+const PasswordEyeIcon = ({ visible }: { visible: boolean }) => (
+  <svg
+    aria-hidden="true"
+    className="h-5 w-5"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+    {!visible && <path strokeLinecap="round" strokeLinejoin="round" d="m3 3 18 18" />}
+  </svg>
+);
 
 export default function Register() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const redirect = useNavigate();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,6 +41,13 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    const normalizedEmail = formData.email.trim().toLowerCase();
+
+    if (!isEmail(normalizedEmail, { require_tld: true })) {
+      setErrorMessage("Please enter a valid email address with a domain extension.");
+      return;
+    }
+
     // Client-side password validation (same rules as server)
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
     if (!passwordRegex.test(formData.password)) {
@@ -31,16 +57,20 @@ export default function Register() {
       return;
     }
 
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await authAPI.register(
-        formData.name,
-        formData.email,
+        formData.name.trim(),
+        normalizedEmail,
         formData.password
       );
-      toast.success("Registration successful! Please login to continue.");
+      toast.success(res.data.message || "Registration successful. You can now log in.");
       redirect("/login");
-      console.log(res.data);
     } catch (err: any) {
       const msg = err.response?.data?.message || "Registration failed";
       setErrorMessage(msg);
@@ -109,22 +139,61 @@ export default function Register() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400"
-                placeholder="Create a strong password"
-              />
-
-              {errorMessage && (
-                <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
-              )}
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400"
+                  placeholder="Create a strong password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 hover:text-gray-700 focus:outline-none focus:text-blue-600"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                >
+                  <PasswordEyeIcon visible={showPassword} />
+                </button>
+              </div>
             </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm password
+              </label>
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder-gray-400"
+                  placeholder="Re-enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((visible) => !visible)}
+                  className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 hover:text-gray-700 focus:outline-none focus:text-blue-600"
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  aria-pressed={showConfirmPassword}
+                >
+                  <PasswordEyeIcon visible={showConfirmPassword} />
+                </button>
+              </div>
+            </div>
+
+            {errorMessage && (
+              <p className="text-sm text-red-600" role="alert">{errorMessage}</p>
+            )}
 
             <button
               type="submit"
